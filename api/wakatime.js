@@ -24,6 +24,8 @@ module.exports = async (req, res) => {
     hide_progress,
     custom_title,
     locale,
+    layout,
+    api_domain,
   } = req.query;
 
   res.setHeader("Content-Type", "image/svg+xml");
@@ -33,7 +35,7 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const last7Days = await fetchLast7Days({ username });
+    const last7Days = await fetchLast7Days({ username, api_domain });
 
     let cacheSeconds = clampValue(
       parseInt(cache_seconds || CONSTANTS.TWO_HOURS, 10),
@@ -60,6 +62,7 @@ module.exports = async (req, res) => {
         theme,
         hide_progress,
         locale: locale ? locale.toLowerCase() : null,
+        layout,
       }),
     );
   } catch (err) {

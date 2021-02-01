@@ -3,7 +3,13 @@ const Card = require("../common/Card");
 const icons = require("../common/icons");
 const { getStyles } = require("../getStyles");
 const { statCardLocales } = require("../translations");
-const { kFormatter, getCardColors, FlexLayout } = require("../common/utils");
+const {
+  kFormatter,
+  FlexLayout,
+  clampValue,
+  measureText,
+  getCardColors,
+} = require("../common/utils");
 
 const createTextNode = ({
   icon,
@@ -64,6 +70,7 @@ const renderStatsCard = (stats = {}, options = { hide: [] }) => {
     theme = "default",
     custom_title,
     locale,
+    disable_animations = false,
   } = options;
 
   const lheight = parseInt(line_height, 10);
@@ -77,7 +84,9 @@ const renderStatsCard = (stats = {}, options = { hide: [] }) => {
     theme,
   });
 
-  const apostrophe = ["x", "s"].includes(name.slice(-1)) ? "" : "s";
+  const apostrophe = ["x", "s"].includes(name.slice(-1).toLocaleLowerCase())
+    ? ""
+    : "s";
   const i18n = new I18n({
     locale,
     translations: statCardLocales({ name, apostrophe }),
@@ -119,7 +128,8 @@ const renderStatsCard = (stats = {}, options = { hide: [] }) => {
     },
   };
 
-  const isLongLocale = ["fr", "pt-br", "es"].includes(locale) === true;
+  const longLocales = ["cn", "es", "fr", "pt-br", "ru", "uk-ua", "id", "my", "pl"];
+  const isLongLocale = longLocales.includes(locale) === true;
 
   // filter out hidden stats defined by user & create the text nodes
   const statItems = Object.keys(STATS)
@@ -173,10 +183,22 @@ const renderStatsCard = (stats = {}, options = { hide: [] }) => {
     progress,
   });
 
+  const calculateTextWidth = () => {
+    return measureText(custom_title ? custom_title : i18n.t("statcard.title"));
+  };
+
+  const width = hide_rank
+    ? clampValue(
+        50 /* padding */ + calculateTextWidth() * 2,
+        270 /* min */,
+        Infinity,
+      )
+    : 495;
+
   const card = new Card({
     customTitle: custom_title,
     defaultTitle: i18n.t("statcard.title"),
-    width: 495,
+    width,
     height,
     colors: {
       titleColor,
@@ -189,6 +211,8 @@ const renderStatsCard = (stats = {}, options = { hide: [] }) => {
   card.setHideBorder(hide_border);
   card.setHideTitle(hide_title);
   card.setCSS(cssStyles);
+
+  if (disable_animations) card.disableAnimations();
 
   return card.render(`
     ${rankCircle}
